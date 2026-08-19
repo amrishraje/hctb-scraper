@@ -6,26 +6,30 @@ You must provide your HCTB Username and Password in order for the scaper to log 
 You must also provide a school code which is provided by HCTB. For individuals who are tracking more than one school code, this configuration option can be given as a comma-separated list.
 
 ## Device Setup
-For each child in your HCTB account, the add-on sends live coordinates to a Home Assistant **webhook**, and you create a matching **template device tracker** so the bus shows up on your map. This is the modern replacement for the old `device_tracker.see` action, which Home Assistant removes in 2027.5.
+For each child in your HCTB account, the add-on creates and updates a Home Assistant `device_tracker` entity named after the child's first name followed by `_bus` (for example `device_tracker.john_bus`), with a bus icon and a friendly name, and continuously writes the bus's live GPS coordinates. It writes this directly through Home Assistant's API using the add-on's built-in access, so there is **nothing to configure** — no webhook, no template, no YAML.
 
-The webhook id must be the child's first name followed by `_bus_location` (lowercase). For a child named John, add this to your `configuration.yaml` and restart Home Assistant:
+Add the entity to a Map card to watch the bus live.
+
+## Alerts and Automations
+Because the add-on writes live GPS coordinates, Home Assistant's built-in **zone** trigger works directly off the bus's location — it detects when the bus enters or leaves a zone. Create a zone for anywhere you care about (your Home zone, or a custom zone such as the bus stop), then trigger on it:
 
 ```yaml
-template:
-  - triggers:
-      - trigger: webhook
-        webhook_id: john_bus_location
-        allowed_methods:
-          - POST
-        local_only: true
-    device_tracker:
-      - name: John Bus
-        latitude: "{{ trigger.json.latitude }}"
-        longitude: "{{ trigger.json.longitude }}"
-        location_accuracy: "{{ trigger.json.gps_accuracy }}"
+automation:
+  - alias: "John's bus is arriving home"
+    triggers:
+      - trigger: zone
+        entity_id: device_tracker.john_bus
+        zone: zone.home
+        event: enter
+    actions:
+      - action: notify.notify
+        data:
+          message: "John's bus is arriving home!"
 ```
 
-This creates `device_tracker.john_bus`. Repeat the block for each child, matching the `webhook_id` (`<firstname>_bus_location`) and `name`. If you previously ran this add-on with the old `device_tracker.see` output, remove the leftover `*_bus` entries from `known_devices.yaml` to avoid a conflict.
+Use `event: leave` to fire when the bus departs a zone. Note: the tracker's *state* stays a static value (the map and zone triggers use the GPS coordinates, not the state), so use a `zone` trigger rather than a state trigger like `to: "home"`.
+
+If you previously ran this add-on with the old `device_tracker.see` output or the webhook/template approach, you can remove those `*_bus` entries from `known_devices.yaml` and delete the template `device_tracker` from your `configuration.yaml` — they are no longer needed.
 
 ## Parking the Bus
 HCTB will only show relevant rides when they are running, otherwise it just won't give any data. For these situations, HomeAssistant doesn't really have a way to "disappear" a device_tracker, so we must "park the bus" somewhere by providing a default location to fall back to.

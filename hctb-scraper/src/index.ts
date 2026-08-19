@@ -12,6 +12,7 @@ import {
   type RefreshMapInput,
   type Session,
   type Sessions,
+  type StateInput,
 } from './models.js';
 
 const config: Config = process.env as unknown as Config;
@@ -210,28 +211,38 @@ async function sync(child: Child, school: string): Promise<void> {
       const firstname: string | undefined = child.name.split(' ')[0]?.toLowerCase();
       if (firstname) {
         const device: string = `${firstname}_bus`;
-        const webhookId: string = `${device}_location`;
         const lat: number = Number(child.location.lat);
         const lon: number = Number(child.location.lon);
         if (Number.isFinite(lat) && Number.isFinite(lon)) {
-          await fetch(`${config.SUPERVISOR_URI}/api/webhook/${webhookId}`, {
+          const statebody: StateInput = {
+            state: 'not_home',
+            attributes: {
+              source_type: 'gps',
+              latitude: lat,
+              longitude: lon,
+              gps_accuracy: 10,
+              friendly_name: `${firstname.charAt(0).toUpperCase()}${firstname.slice(1)} Bus`,
+              icon: 'mdi:bus',
+            },
+          };
+          await fetch(`${config.SUPERVISOR_URI}/api/states/device_tracker.${device}`, {
             headers: {
               Authorization: `Bearer ${config.SUPERVISOR_TOKEN}`,
               'Content-Type': `application/json`,
             },
-            body: JSON.stringify({ latitude: lat, longitude: lon, gps_accuracy: 10 }),
+            body: JSON.stringify(statebody),
             method: 'POST',
             signal: AbortSignal.timeout(5000),
           })
           .then((res) => {
             if (res?.ok) {
-              console.info(` Location sent to webhook '${webhookId}'`);
+              console.info(` Synced device_tracker.${device} (${statebody.state})`);
               return res;
             }
             throw new Error(res?.status?.toString());
           });
         } else {
-          console.info(`  No valid location to send for '${device}'`);
+          console.info(`  No valid location to sync for '${device}'`);
         }
         if (child.alerts.length) {
           for (const alert of child.alerts) {

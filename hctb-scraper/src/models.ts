@@ -73,3 +73,16 @@ export interface DeviceResponse {
 export interface HCTBResponse {
   d: string;
 }
+
+// POST /api/states/device_tracker.<device> body
+export interface StateInput {
+  state: string;
+  attributes: {
+    source_type: 'gps';
+    latitude: number;
+    longitude: number;
+    gps_accuracy: number;
+    friendly_name: string;
+    icon: string;
+  };
+}
