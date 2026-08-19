@@ -7,13 +7,11 @@ import {
   type AlertInput,
   type Child,
   type Config,
-  type DeviceResponse,
   type HCTBResponse,
   type Location,
   type RefreshMapInput,
   type Session,
   type Sessions,
-  type SyncInput,
 } from './models.js';
 
 const config: Config = process.env as unknown as Config;
@@ -212,53 +210,28 @@ async function sync(child: Child, school: string): Promise<void> {
       const firstname: string | undefined = child.name.split(' ')[0]?.toLowerCase();
       if (firstname) {
         const device: string = `${firstname}_bus`;
-        let previous: Location | undefined;
-        await fetch(`${config.SUPERVISOR_URI}/api/states/device_tracker.${device}`, {
-          headers: {
-            Authorization: `Bearer ${config.SUPERVISOR_TOKEN}`,
-            'Content-Type': `application/json`,
-          },
-          method: 'GET',
-          signal: AbortSignal.timeout(5000),
-        })
-        .then((res) => {
-          if (res?.ok) {
-            console.info(`  Device state received for '${device}'`);
-            return res.json();
-          }
-          if (res?.status === 404) {
-            console.info(`  Create device '${device}'`);
-            return res;
-          }
-          throw new Error(res?.status?.toString());
-        })
-        .then((json: any) => {
-          if (json && json.attributes && json.attributes.latitude && json.attributes.longitude) {
-            const jsonres: DeviceResponse = json;
-            previous = { lat: jsonres.attributes.latitude.toString(), lon: jsonres.attributes.longitude.toString() };
-          }
-          return json;
-        });
-        if (!previous || previous && (previous?.lat !== child.location.lat && previous?.lon !== child.location.lon)) {
-          const syncbody: SyncInput = { dev_id: device, gps: [child.location.lat, child.location.lon] };
-          await fetch(`${config.SUPERVISOR_URI}/api/services/device_tracker/see`, {
+        const webhookId: string = `${device}_location`;
+        const lat: number = Number(child.location.lat);
+        const lon: number = Number(child.location.lon);
+        if (Number.isFinite(lat) && Number.isFinite(lon)) {
+          await fetch(`${config.SUPERVISOR_URI}/api/webhook/${webhookId}`, {
             headers: {
               Authorization: `Bearer ${config.SUPERVISOR_TOKEN}`,
               'Content-Type': `application/json`,
             },
-            body: JSON.stringify(syncbody),
+            body: JSON.stringify({ latitude: lat, longitude: lon, gps_accuracy: 10 }),
             method: 'POST',
             signal: AbortSignal.timeout(5000),
           })
           .then((res) => {
             if (res?.ok) {
-              console.info(` Location sent to HomeAssistant device '${device}'`);
+              console.info(` Location sent to webhook '${webhookId}'`);
               return res;
             }
             throw new Error(res?.status?.toString());
           });
         } else {
-          console.info(`  Location did not change for '${device}'`);
+          console.info(`  No valid location to send for '${device}'`);
         }
         if (child.alerts.length) {
           for (const alert of child.alerts) {
