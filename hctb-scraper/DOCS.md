@@ -6,7 +6,7 @@ You must provide your HCTB Username and Password in order for the scaper to log 
 You must also provide a school code which is provided by HCTB. For individuals who are tracking more than one school code, this configuration option can be given as a comma-separated list.
 
 ## Device Setup
-For each child in your HCTB account, the add-on creates and updates a Home Assistant `device_tracker` entity named after the child's first name followed by `_bus` (for example `device_tracker.john_bus`), with a bus icon and a friendly name, and continuously writes the bus's live GPS coordinates. It writes this directly through Home Assistant's API using the add-on's built-in access, so there is **nothing to configure** — no webhook, no template, no YAML.
+For each child in your HCTB account, the add-on creates and updates a Home Assistant `device_tracker` entity named after the child's first name followed by `_bus` (for example `device_tracker.child_bus`), with a bus icon and a friendly name, and continuously writes the bus's live GPS coordinates. It writes this directly through Home Assistant's API using the add-on's built-in access, so there is **nothing to configure** — no webhook, no template, no YAML.
 
 Add the entity to a Map card to watch the bus live.
 
@@ -15,16 +15,16 @@ Because the add-on writes live GPS coordinates, Home Assistant's built-in **zone
 
 ```yaml
 automation:
-  - alias: "John's bus is arriving home"
+  - alias: "Child's bus is arriving home"
     triggers:
       - trigger: zone
-        entity_id: device_tracker.john_bus
+        entity_id: device_tracker.child_bus
         zone: zone.home
         event: enter
     actions:
       - action: notify.notify
         data:
-          message: "John's bus is arriving home!"
+          message: "Child's bus is arriving home!"
 ```
 
 Use `event: leave` to fire when the bus departs a zone. Note: the tracker's *state* stays a static value (the map and zone triggers use the GPS coordinates, not the state), so use a `zone` trigger rather than a state trigger like `to: "home"`.
