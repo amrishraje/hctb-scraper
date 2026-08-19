@@ -15,7 +15,8 @@ template:
   - triggers:
       - trigger: webhook
         webhook_id: john_bus_location
-        allowed_methods: [POST]
+        allowed_methods:
+          - POST
         local_only: true
     device_tracker:
       - name: John Bus
