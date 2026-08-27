@@ -22,7 +22,7 @@ let sessions: Sessions = {};
 let notificationIds: string[] = [];
 
 console.log(`HCTB Scraper started`);
-cron.schedule(`*/10 * ${config.SCHEDULE}`, async (ctx: TaskContext) => { await task(ctx); }, { noOverlap: true });
+cron.schedule(`*/10 ${config.SCHEDULE}`, async (ctx: TaskContext) => { await task(ctx); }, { noOverlap: true });
 
 async function login(ctx: TaskContext, school: string): Promise<void> {
   try {
