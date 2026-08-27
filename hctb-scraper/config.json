@@ -15,7 +15,7 @@
     "hctb_schoolcode": null,
     "default_lat": null,
     "default_lon": null,
-    "schedule": "20-40 8 * 1,2,3,4,5,8,9,10,11,12 1,2,3,4,5, 15-45 16 * 1,2,3,4,5,8,9,10,11,12 1,2,3,4,5"
+    "schedule": "20-40,15-45 8,16 * 1,2,3,4,5,8,9,10,11,12 1,2,3,4,5"
   },
   "schema": {
     "hctb_username": "str",
